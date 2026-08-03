@@ -1,0 +1,53 @@
+name: Update river levels
+
+on:
+  schedule:
+    # 00:45 Asia/Colombo on the following calendar day.
+    - cron: "15 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-river-levels
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      # Generate and validate beside the last-good archive. The published file is
+      # replaced only after both commands succeed.
+      - name: Generate candidate archive
+        run: node scripts/generate-river-levels.js --output data/river-levels.next.json
+
+      - name: Validate candidate size and schema, then publish
+        run: |
+          node scripts/validate-river-levels.js data/river-levels.next.json
+          mv data/river-levels.next.json data/river-levels.json
+
+      - name: Commit changed data
+        run: |
+          git add data/river-levels.json
+          if git diff --cached --quiet; then
+            echo "River archive is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: update river levels"
+          git push

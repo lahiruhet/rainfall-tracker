@@ -1,0 +1,15 @@
+{
+  "name": "rainfall-river-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sri Lanka rainfall and observational river-level tracker",
+  "scripts": {
+    "generate:river": "node scripts/generate-river-levels.js",
+    "validate:river": "node scripts/validate-river-levels.js data/river-levels.json",
+    "test": "node --test --test-isolation=none",
+    "verify": "npm test && npm run validate:river"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

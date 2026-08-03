@@ -97,9 +97,34 @@ button[disabled]{opacity:.45;cursor:not-allowed}
   padding:14px 16px;margin-bottom:22px;font-size:14px;
 }
 .status.error{border-left-color:var(--b5)}
+.status.warning{border-left-color:var(--b4)}
+.status.cached{border-left-color:var(--b4);background:#FFF9E8}
 .status .how{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.7}
 .status code{background:#fff;border:1px solid var(--rule);padding:1px 5px;font-size:12px}
 .hidden{display:none !important}
+
+/* ---------- river levels ---------- */
+.river-current{
+  display:grid;gap:1px;background:var(--rule);
+  grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
+}
+.river-cell{background:var(--paper-2);padding:14px 16px;min-height:98px}
+.river-cell .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.river-cell .v{font-family:var(--display);font-size:32px;font-weight:600;line-height:1.05;margin-top:8px;font-variant-numeric:tabular-nums}
+.river-cell .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.45}
+.river-unit-secondary{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-left:5px}
+.river-badge{display:inline-block;padding:4px 9px;border:1px solid currentColor;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.river-badge.normal{color:var(--b3)}
+.river-badge.alert{color:#8A6700;background:#FFF3C4}
+.river-badge.minor{color:var(--b5);background:#FFE5D6}
+.river-badge.major{color:var(--b6);background:#F8DCEB}
+.river-badge.unknown{color:var(--ink-3)}
+.stale-flag{color:var(--b5);font-weight:600}
+.hydro-line{fill:none;stroke:var(--b3);stroke-width:2;pointer-events:none}
+.hydro-dot{fill:var(--paper-2);stroke:var(--b3);stroke-width:2;cursor:crosshair}
+.hydro-hit{fill:transparent;cursor:crosshair}
+.provenance-key{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);padding:0 16px 14px}
+.river-value{font-variant-numeric:tabular-nums}
 
 /* ---------- stats ---------- */
 .stats{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);grid-template-columns:repeat(auto-fit,minmax(168px,1fr));margin-bottom:26px}
@@ -177,7 +202,11 @@ footer p{margin:0 0 10px}
 footer a{color:var(--b3)}
 
 @media (max-width:640px){
-  .wrap{padding:20px 14px 60px}
+  .wrap{width:100%;min-width:0;padding:20px 14px 60px;overflow-x:hidden}
+  .controls,.stats,.river-current{grid-template-columns:minmax(0,1fr)}
+  .controls>*{min-width:0}
+  .field select,.field input,button{max-width:100%;min-width:0}
+  .chart-scroll,.tbl-scroll,.panel{max-width:100%;min-width:0}
   .stat .v{font-size:34px}
   .custom-coords{grid-column:span 1}
 }
@@ -215,6 +244,12 @@ footer a{color:var(--b3)}
       </div>
     </div>
     <div class="field">
+      <label for="gauge">River gauge (independent)</label>
+      <select id="gauge" aria-describedby="gaugeCoverage">
+        <option value="">Select river gauge.</option>
+      </select>
+    </div>
+    <div class="field">
       <label for="start">From</label>
       <input id="start" type="date" value="2025-11-28">
     </div>
@@ -236,7 +271,30 @@ footer a{color:var(--b3)}
     Ready. Press <strong>Load record</strong> to pull the daily series from Open-Meteo.
   </div>
 
+  <div class="status" id="riverStatus" aria-live="polite">
+    Loading official gauges and the cached historical archive…
+  </div>
+
   <section class="stats hidden" id="stats"></section>
+
+  <section class="panel hidden" id="riverSummaryPanel">
+    <div class="panel-head">
+      <h2>Current river level</h2>
+      <span class="sub" id="riverSummarySub">Measured gauge observation</span>
+    </div>
+    <div class="river-current" id="riverCurrent"></div>
+    <div class="panel-body mono-note" id="gaugeCoverage"></div>
+  </section>
+
+  <section class="panel hidden" id="riverChartPanel">
+    <div class="panel-head">
+      <h2>Daily peak hydrograph</h2>
+      <span class="sub" id="riverChartSub">Daily maximum · metres</span>
+    </div>
+    <div class="readout" id="riverReadout">Hover or focus a point for the daily gauge details.</div>
+    <div class="chart-scroll" id="riverChartScroll"></div>
+    <div class="provenance-key">Solid points are measured daily peaks. Missing dates are left as visible gaps; no river levels are interpolated.</div>
+  </section>
 
   <section class="panel hidden" id="chartPanel">
     <div class="panel-head">
@@ -288,6 +346,8 @@ footer a{color:var(--b3)}
             <th class="s" data-sort="tmax">Max °C</th>
             <th class="s" data-sort="tmin">Min °C</th>
             <th class="s" data-sort="wind">Wind km/h</th>
+            <th class="s" data-sort="riverPeak">River peak</th>
+            <th class="s" data-sort="riverStatusRank">Flood status</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -297,13 +357,14 @@ footer a{color:var(--b3)}
 
   <footer>
     <h3>What this data actually is</h3>
-    <p>These figures come from the Open-Meteo historical archive, which serves ECMWF <strong>ERA5 / IFS reanalysis</strong> — a model that blends station, radar, satellite, buoy and aircraft observations onto a ~9–25&nbsp;km grid. It is a solid, gap-free estimate for a coordinate, and it is <em>not</em> a gauge reading.</p>
-    <p>If you need officially confirmed, station-measured rainfall — the numbers that hold up in an insurance claim, a report or a court file — the source of record is the <strong>Department of Meteorology, Sri Lanka</strong> (meteo.gov.lk), which publishes daily station rainfall bulletins. Ask them for the station series for the dates you need. Treat this page as the fast working view, not the certified one.</p>
-    <p>The most recent 2–5 days may be missing or preliminary: reanalysis lags real time. Ditwah made landfall on the east coast on 28 November 2025; heavy rain returned 19–23 December 2025, and both windows are shaded on the chart.</p>
+    <p><strong>Rainfall is modelled.</strong> Open-Meteo serves ECMWF ERA5 / IFS reanalysis: a model that blends multiple observations onto a grid. It is a useful coordinate-based estimate, not a rain-gauge measurement or certified station record.</p>
+    <p><strong>River levels are measured gauge observations.</strong> Current readings come directly from the Sri Lanka Irrigation Department’s <a href="https://www.arcgis.com/apps/dashboards/2cffe83c9ff5497d97375498bdf3ff38">official public ArcGIS dashboard</a>. The layer exposes only its latest seven days. Earlier readings from 28 November 2025 onward come from <a href="https://github.com/nuuuwan/lk_irrigation">nuuuwan/lk_irrigation</a>, a community-maintained snapshot mirror of that official feed—not an Irrigation Department archive.</p>
+    <p><strong>Official flood-event spot check.</strong> The mirror’s Dunamale observation at 15:03 LKT on 28 November 2025 is 5.96&nbsp;m, matching the approximately 15:00 reading in the <a href="https://www.dmc.gov.lk/images/dmcreports/Water_level_%26_Rainfall_2025__1764326082.pdf">official DMC water-level bulletin</a>. This cross-check does not certify every archived observation.</p>
+    <p>The most recent rainfall days may be preliminary. River levels preserve gauge-datum values, including negatives, and missing dates are never interpolated. This is an observational tracker—not a flood forecast, discharge model, certification source, or automatic nearest-gauge recommendation.</p>
   </footer>
 </div>
 
-<script>
+<script type="text/plain" id="legacy-script">
 const LANDFALL = "2025-11-28";
 
 const PLACES = [
@@ -650,5 +711,7 @@ document.querySelectorAll("th.s").forEach(th=>{
 el.dayCount.textContent = "day " + (daysBetween(LANDFALL, iso(new Date())) + 1);
 loadData();
 </script>
+<script src="lib/river-levels.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
