@@ -5,11 +5,16 @@
   "description": "Sri Lanka rainfall and observational river-level tracker",
   "scripts": {
     "generate:river": "node scripts/generate-river-levels.js",
+    "generate:map": "node scripts/generate-river-map.js",
     "validate:river": "node scripts/validate-river-levels.js data/river-levels.json",
+    "validate:map": "node scripts/validate-river-map.js data/river-map.json",
     "test": "node --test --test-isolation=none",
-    "verify": "npm test && npm run validate:river"
+    "verify": "npm test && npm run validate:river && npm run validate:map"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4"
   }
 }

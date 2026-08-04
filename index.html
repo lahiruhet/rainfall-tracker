@@ -1,717 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rainfall Log — since Ditwah</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{
-  --paper:#E7EEF1;
-  --paper-2:#F3F7F8;
-  --ink:#0F242E;
-  --ink-2:#41606C;
-  --ink-3:#7A959F;
-  --grid:#C6D6DD;
-  --rule:#AFC4CD;
-
-  /* rainfall intensity ramp — light to exceptional */
-  --b0:#D6E3E9;
-  --b1:#9CC8DC;
-  --b2:#4E9EC2;
-  --b3:#1C6A93;
-  --b4:#D3A017;
-  --b5:#C4551E;
-  --b6:#8E1F5E;
-
-  --display:"Barlow Condensed",'Haettenschweiler','Arial Narrow',sans-serif;
-  --body:"IBM Plex Sans",'Segoe UI',system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,'SF Mono',Menlo,monospace;
-}
-
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{
-  background:var(--paper);
-  background-image:
-    linear-gradient(var(--grid) 1px,transparent 1px),
-    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:64px 64px,64px 64px;
-  color:var(--ink);
-  font-family:var(--body);
-  font-size:15px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-}
-.wrap{max-width:1300px;margin:0 auto;padding:28px 20px 80px}
-
-/* ---------- masthead ---------- */
-.masthead{border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
-.eyebrow{
-  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink-2);display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin-bottom:6px;
-}
-.eyebrow b{color:var(--b5);font-weight:600}
-h1{
-  font-family:var(--display);font-weight:700;font-size:clamp(46px,9vw,104px);
-  line-height:.86;letter-spacing:-.01em;text-transform:uppercase;margin:0;
-}
-h1 span{color:var(--ink-3)}
-.standfirst{max-width:62ch;color:var(--ink-2);font-size:14.5px;margin:12px 0 0}
-
-/* ---------- controls ---------- */
-.controls{
-  background:var(--paper-2);border:1px solid var(--rule);
-  padding:16px;display:grid;gap:14px;
-  grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
-  align-items:end;margin-bottom:20px;
-}
-.field{display:flex;flex-direction:column;gap:5px;min-width:0}
-.field label{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);
-}
-.field select,.field input{
-  font-family:var(--mono);font-size:13.5px;color:var(--ink);
-  background:#fff;border:1px solid var(--rule);border-radius:0;padding:8px 9px;width:100%;
-}
-.field select:focus-visible,.field input:focus-visible,button:focus-visible{
-  outline:2px solid var(--b3);outline-offset:1px;
-}
-button{
-  font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-  background:var(--ink);color:var(--paper-2);border:1px solid var(--ink);
-  padding:9px 18px;cursor:pointer;border-radius:0;
-}
-button:hover{background:var(--b3);border-color:var(--b3)}
-button.ghost{background:transparent;color:var(--ink)}
-button.ghost:hover{background:var(--ink);color:var(--paper-2)}
-button[disabled]{opacity:.45;cursor:not-allowed}
-.custom-coords{display:none;grid-column:span 2;gap:14px;grid-template-columns:1fr 1fr}
-.custom-coords.on{display:grid}
-
-/* ---------- status ---------- */
-.status{
-  border-left:4px solid var(--b3);background:var(--paper-2);
-  padding:14px 16px;margin-bottom:22px;font-size:14px;
-}
-.status.error{border-left-color:var(--b5)}
-.status.warning{border-left-color:var(--b4)}
-.status.cached{border-left-color:var(--b4);background:#FFF9E8}
-.status .how{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.7}
-.status code{background:#fff;border:1px solid var(--rule);padding:1px 5px;font-size:12px}
-.hidden{display:none !important}
-
-/* ---------- river levels ---------- */
-.river-current{
-  display:grid;gap:1px;background:var(--rule);
-  grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
-}
-.river-cell{background:var(--paper-2);padding:14px 16px;min-height:98px}
-.river-cell .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-.river-cell .v{font-family:var(--display);font-size:32px;font-weight:600;line-height:1.05;margin-top:8px;font-variant-numeric:tabular-nums}
-.river-cell .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.45}
-.river-unit-secondary{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-left:5px}
-.river-badge{display:inline-block;padding:4px 9px;border:1px solid currentColor;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.river-badge.normal{color:var(--b3)}
-.river-badge.alert{color:#8A6700;background:#FFF3C4}
-.river-badge.minor{color:var(--b5);background:#FFE5D6}
-.river-badge.major{color:var(--b6);background:#F8DCEB}
-.river-badge.unknown{color:var(--ink-3)}
-.stale-flag{color:var(--b5);font-weight:600}
-.hydro-line{fill:none;stroke:var(--b3);stroke-width:2;pointer-events:none}
-.hydro-dot{fill:var(--paper-2);stroke:var(--b3);stroke-width:2;cursor:crosshair}
-.hydro-hit{fill:transparent;cursor:crosshair}
-.provenance-key{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);padding:0 16px 14px}
-.river-value{font-variant-numeric:tabular-nums}
-
-/* ---------- stats ---------- */
-.stats{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);grid-template-columns:repeat(auto-fit,minmax(168px,1fr));margin-bottom:26px}
-.stat{background:var(--paper-2);padding:14px 16px}
-.stat .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-.stat .v{font-family:var(--display);font-size:42px;font-weight:600;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}
-.stat .v em{font-style:normal;font-size:17px;color:var(--ink-3);margin-left:3px}
-.stat .n{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:5px}
-
-/* ---------- panels ---------- */
-.panel{background:var(--paper-2);border:1px solid var(--rule);margin-bottom:26px}
-.panel-head{
-  display:flex;flex-wrap:wrap;gap:10px 20px;align-items:baseline;justify-content:space-between;
-  padding:13px 16px;border-bottom:1px solid var(--rule);
-}
-.panel-head h2{
-  font-family:var(--display);text-transform:uppercase;letter-spacing:.03em;
-  font-size:25px;font-weight:600;margin:0;
-}
-.panel-head .sub{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
-.panel-body{padding:16px}
-
-/* ---------- chart ---------- */
-.chart-scroll{overflow-x:auto;overflow-y:hidden}
-.chart-scroll svg{display:block;min-width:820px;width:100%;height:auto}
-.readout{
-  font-family:var(--mono);font-size:12.5px;color:var(--ink-2);
-  border-bottom:1px dashed var(--rule);padding:0 16px 11px;min-height:22px;
-}
-.readout b{color:var(--ink);font-weight:600}
-.bar{transition:opacity .12s}
-.chart-scroll:hover .bar{opacity:.55}
-.chart-scroll .bar:hover{opacity:1}
-
-/* ramp legend */
-.legend{display:flex;flex-wrap:wrap;gap:2px;padding:0 16px 16px}
-.legend .li{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;background:#fff;border:1px solid var(--rule)}
-.legend .sw{width:13px;height:13px;flex:none}
-.legend .lb{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-2);white-space:nowrap}
-
-/* ---------- tables ---------- */
-.tbl-scroll{max-height:560px;overflow:auto}
-table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
-thead th{
-  position:sticky;top:0;background:var(--paper-2);z-index:2;
-  text-align:right;font-weight:600;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink-2);padding:9px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;
-}
-thead th:first-child,tbody td:first-child{text-align:left}
-thead th.s{cursor:pointer;user-select:none}
-thead th.s:hover{color:var(--ink)}
-tbody td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap;font-variant-numeric:tabular-nums}
-tbody tr:hover td{background:#fff}
-tbody tr.wet td{font-weight:600}
-tbody tr.event td:first-child{box-shadow:inset 3px 0 0 var(--b6)}
-.chip{display:inline-block;width:9px;height:9px;margin-right:7px;vertical-align:-1px}
-.mono-note{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
-.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:14px 16px;border-bottom:1px solid var(--rule)}
-.filters .field{min-width:120px}
-
-/* monthly */
-.months{display:grid;gap:1px;background:var(--rule);grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
-.mo{background:var(--paper-2);padding:12px 14px}
-.mo .mn{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-.mo .mv{font-family:var(--display);font-size:33px;font-weight:600;line-height:1.05;margin-top:4px;font-variant-numeric:tabular-nums}
-.mo .mv em{font-style:normal;font-size:14px;color:var(--ink-3)}
-.mo .track{height:5px;background:var(--grid);margin-top:9px}
-.mo .track i{display:block;height:100%;background:var(--b3)}
-.mo .md{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:7px}
-
-/* footer */
-footer{border-top:1px solid var(--rule);padding-top:18px;color:var(--ink-2);font-size:13px;max-width:76ch}
-footer h3{font-family:var(--display);text-transform:uppercase;font-size:19px;letter-spacing:.04em;margin:0 0 8px;color:var(--ink)}
-footer p{margin:0 0 10px}
-footer a{color:var(--b3)}
-
-@media (max-width:640px){
-  .wrap{width:100%;min-width:0;padding:20px 14px 60px;overflow-x:hidden}
-  .controls,.stats,.river-current{grid-template-columns:minmax(0,1fr)}
-  .controls>*{min-width:0}
-  .field select,.field input,button{max-width:100%;min-width:0}
-  .chart-scroll,.tbl-scroll,.panel{max-width:100%;min-width:0}
-  .stat .v{font-size:34px}
-  .custom-coords{grid-column:span 1}
-}
-@media (prefers-reduced-motion:reduce){
-  *{animation:none !important;transition:none !important}
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Coordinate-matched modelled rainfall and measured river levels for Sri Lanka's monitored river systems.">
+  <title>Sri Lanka rainfall &amp; river tracker</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <style>
+    :root{
+      --paper:#f5f2e9;--panel:#fffdf7;--ink:#17201f;--ink-2:#45504d;--ink-3:#737c78;
+      --rule:#d8d3c7;--grid:#e7e2d7;--river:#90a09d;--river-selected:#087e8b;
+      --normal:#198754;--alert:#d28b00;--minor:#d65a31;--major:#9e2146;--unknown:#6f7775;
+      --rain-light:#9ccfe0;--rain-mid:#2e8fbb;--rain-heavy:#17678e;--event:#b4365b;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+      --display:"Arial Narrow","Roboto Condensed",var(--sans);--mono:"SFMono-Regular",Consolas,monospace;
+    }
+    *{box-sizing:border-box}html{color-scheme:light}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+    a{color:#076a75}button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+    .wrap{width:min(1480px,calc(100% - 32px));margin:auto;padding:26px 0 64px}
+    .masthead{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:end;border-bottom:3px solid var(--ink);padding:4px 0 20px}
+    .eyebrow,.sub,.mono-note,.status,.map-attribution,.gauge-meta,.readout,.coverage,.range-note{font-family:var(--mono)}
+    .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+    h1,h2,h3,p{margin-top:0}.masthead h1{font:700 clamp(44px,7vw,92px)/.84 var(--display);letter-spacing:-.045em;text-transform:uppercase;margin:12px 0 0}
+    .masthead h1 span{color:var(--river-selected)}.standfirst{max-width:610px;font-size:17px;line-height:1.55;margin:0;color:var(--ink-2)}
+    .panel,.selector-shell,.controls{background:var(--panel);border:1px solid var(--rule);margin-top:18px}
+    .selector-shell{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr);min-height:560px}
+    .map-pane{position:relative;border-right:1px solid var(--rule);min-width:0}.section-label{position:absolute;z-index:500;top:14px;left:72px;background:rgba(255,253,247,.94);border:1px solid var(--rule);padding:8px 10px;font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase}
+    #riverMap{height:520px;background:linear-gradient(145deg,#e8efeb,#dce8e4)}.map-fallback{height:520px;display:grid;place-items:center;padding:34px;text-align:center;color:var(--ink-2)}
+    .map-attribution{padding:8px 12px;font-size:10px;line-height:1.45;color:var(--ink-3);border-top:1px solid var(--rule)}
+    .selector-panel{display:flex;flex-direction:column;min-height:0}.selector-head{padding:18px;border-bottom:1px solid var(--rule)}
+    .selector-head h2{font:700 28px/1 var(--display);text-transform:uppercase;margin:4px 0 7px}.selector-head .sub{font-size:11px;color:var(--ink-3)}
+    .inline-actions{display:flex;align-items:center;gap:10px;margin-top:13px}.text-button{border:0;background:none;padding:0;text-decoration:underline;color:#076a75;font-size:12px}
+    .field{display:grid;gap:6px}.field label,.field-label{font:600 11px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+    .field select,.field input{width:100%;min-height:42px;background:#fff;border:1px solid #a9aaa4;padding:8px 10px;border-radius:0}
+    :focus-visible{outline:3px solid #1b8d9a;outline-offset:2px}.gauge-select-wrap{padding:14px 18px 10px}
+    .gauge-list{padding:4px 10px 12px;overflow:auto;max-height:365px}.gauge-list button{display:grid;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--grid);padding:11px 8px;gap:4px}.gauge-list button:hover,.gauge-list button[aria-current="true"]{background:#eef5f2}
+    .gauge-name{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700}.gauge-meta{font-size:10px;color:var(--ink-3);line-height:1.45}.unmapped{color:var(--minor);font-weight:600}
+    .mini-status,.river-badge{display:inline-flex;align-items:center;border:1px solid currentColor;padding:2px 6px;font:700 10px var(--mono);text-transform:uppercase}.mini-status.normal,.river-badge.normal{color:var(--normal)}.mini-status.alert,.river-badge.alert{color:#986400}.mini-status.minor,.river-badge.minor{color:var(--minor)}.mini-status.major,.river-badge.major{color:var(--major)}.mini-status.unknown,.river-badge.unknown{color:var(--unknown)}
+    .controls{padding:16px;display:grid;grid-template-columns:auto minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end}.presets{display:flex;gap:5px;flex-wrap:wrap}.preset,.action{min-height:42px;border:1px solid var(--ink);background:transparent;padding:8px 13px;font-weight:700}.preset.active,.action.primary{background:var(--ink);color:#fff}.action:disabled{opacity:.45;cursor:not-allowed}
+    details.rain-only{grid-column:1/-1;border-top:1px solid var(--rule);padding-top:12px}details.rain-only summary{cursor:pointer;font-weight:700;color:var(--ink-2)}.rain-only-grid{display:grid;grid-template-columns:minmax(160px,1fr) minmax(120px,.5fr) minmax(120px,.5fr) auto;gap:10px;align-items:end;margin-top:12px}.custom-coordinate{display:none}.custom-coordinate.on{display:grid}
+    .status{padding:11px 13px;border-left:4px solid var(--river-selected);background:#e9f3f1;margin-top:10px;font-size:12px;line-height:1.5}.status.warning{border-color:var(--alert);background:#fff5da}.status.error{border-color:var(--major);background:#fae9ed}.status.cached{border-color:var(--minor);background:#fff0e8}.hidden{display:none!important}
+    .location-head{display:flex;align-items:end;justify-content:space-between;gap:18px;padding:18px;border-bottom:1px solid var(--rule)}.location-head h2{font:700 34px/1 var(--display);text-transform:uppercase;margin:0}.location-head .sub{font-size:11px;color:var(--ink-3);margin-top:7px}.coverage{font-size:10px;color:var(--ink-3);max-width:560px;text-align:right;line-height:1.5}
+    .overview{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));border-bottom:1px solid var(--rule)}.stat{padding:16px;border-right:1px solid var(--rule);min-height:118px}.stat:last-child{border:0}.stat .k{font:600 10px var(--mono);text-transform:uppercase;color:var(--ink-3)}.stat .v{font:700 25px/1.1 var(--display);margin:10px 0 6px}.stat .v em{font:500 12px var(--mono);font-style:normal;margin-left:4px}.stat .n{font-size:11px;color:var(--ink-3);line-height:1.4}.river-unit-secondary{font-size:.55em;color:var(--ink-3)}
+    .panel-head{display:flex;justify-content:space-between;gap:16px;align-items:end;padding:15px 18px;border-bottom:1px solid var(--rule)}.panel-head h3{font:700 24px/1 var(--display);text-transform:uppercase;margin:0}.panel-head .sub{font-size:10px;color:var(--ink-3)}
+    .readout{min-height:48px;padding:11px 18px;border-bottom:1px solid var(--rule);font-size:11px;line-height:1.55;color:var(--ink-2)}.chart-scroll{overflow-x:auto;overflow-y:hidden;background:#fff}.chart-scroll svg{display:block;height:auto;min-width:100%}.chart-empty{padding:48px 18px;text-align:center;color:var(--ink-3);font-family:var(--mono);font-size:12px}
+    .chart-grid{stroke:var(--grid)}.chart-month{stroke:var(--rule);stroke-dasharray:2 3}.hydro-line{fill:none;stroke:#087e8b;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}.hydro-dot{fill:#fff;stroke:#087e8b;stroke-width:2}.day-hit{fill:transparent;cursor:crosshair}.day-hit:focus{fill:rgba(8,126,139,.06)}.crosshair{stroke:var(--ink);stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.axis-text{font:10px var(--mono);fill:var(--ink-3)}.axis-title{font:700 10px var(--mono);fill:var(--ink-2);letter-spacing:.06em}.month-text{font:700 14px var(--display);fill:var(--ink-2)}
+    .chart-key{display:flex;gap:18px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--rule);font:10px var(--mono);color:var(--ink-3)}.key-item{display:flex;gap:6px;align-items:center}.swatch{width:18px;height:8px;background:var(--rain-mid)}.swatch.line{height:2px;background:var(--river-selected)}.swatch.gap{height:0;border-top:2px dashed var(--ink-3)}
+    .months{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}.month{padding:15px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}.month .mn{font:600 11px var(--mono);text-transform:uppercase}.month .mv{font:700 26px var(--display);margin:8px 0}.month .track{height:4px;background:var(--grid)}.month .track i{display:block;height:100%;background:var(--rain-mid)}.month .md{font-size:10px;color:var(--ink-3);margin-top:7px}
+    .filters{display:flex;gap:12px;align-items:end;padding:12px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap}.filters .field{min-width:150px}.tbl-scroll{overflow:auto;max-height:570px}table{border-collapse:collapse;width:100%;font:11px var(--mono);white-space:nowrap}th,td{padding:9px 10px;border-bottom:1px solid var(--grid);text-align:right}th{position:sticky;top:0;background:var(--ink);color:#fff;z-index:1;font-size:9px;text-transform:uppercase;letter-spacing:.04em}th:first-child,td:first-child{text-align:left}.sortable{cursor:pointer}tr.event{background:#fff6f8}tr:hover{background:#eef5f2}.details-cell{text-align:left;white-space:normal;min-width:260px;max-width:360px;line-height:1.5}
+    .method{padding:20px;font-size:13px;line-height:1.65;color:var(--ink-2)}.method p:last-child{margin:0}
+    .leaflet-container{font-family:var(--sans);background:#e1ebe7}.leaflet-control-zoom a{color:var(--ink)}.leaflet-popup-content{line-height:1.5;margin:13px 15px;min-width:210px}.popup-title{font-weight:800;font-size:15px}.popup-meta{color:var(--ink-3);font:10px/1.5 var(--mono)}
+    .gauge-div-icon{background:transparent;border:0}.gauge-marker{display:block;position:relative;width:16px;height:16px;background:var(--marker-color);border:2px solid #fff;box-shadow:0 0 0 1.5px #17201f}.gauge-marker.circle{border-radius:50%}.gauge-marker.square{border-radius:1px}.gauge-marker.diamond{transform:rotate(45deg)}.gauge-marker.triangle{clip-path:polygon(50% 0,100% 100%,0 100%);border:0;box-shadow:none;filter:drop-shadow(0 0 1px #17201f)}.gauge-marker.ring{background:#fff;border:3px solid var(--marker-color);border-radius:50%}.gauge-marker.stale::after{content:"";position:absolute;inset:-6px;border:2px dashed var(--marker-color);border-radius:50%}.gauge-marker.selected{box-shadow:0 0 0 2px #fff,0 0 0 5px #111;z-index:2}.gauge-marker.triangle.selected{filter:drop-shadow(0 0 3px #111)}
+    @media(max-width:1050px){.selector-shell{grid-template-columns:1fr}.map-pane{border-right:0;border-bottom:1px solid var(--rule)}.selector-panel{min-height:430px}.overview{grid-template-columns:repeat(4,1fr)}.controls{grid-template-columns:1fr 1fr}.presets{grid-column:1/-1}.rain-only-grid{grid-template-columns:1fr 1fr}.masthead{grid-template-columns:1fr}.standfirst{max-width:none}}
+    @media(max-width:650px){.wrap{width:min(100% - 18px,1480px);padding-top:12px}.masthead h1{font-size:50px}.selector-shell{margin-top:12px}#riverMap,.map-fallback{height:430px}.overview{grid-template-columns:1fr 1fr}.stat:nth-child(even){border-right:0}.controls,.rain-only-grid{grid-template-columns:1fr}.location-head,.panel-head{align-items:flex-start;flex-direction:column}.coverage{text-align:left}.gauge-list{max-height:310px}.preset{flex:1}.controls{padding:12px}.location-head h2{font-size:29px}}
+  </style>
 </head>
 <body>
 <div class="wrap">
-
   <header class="masthead">
-    <div class="eyebrow">
-      <span>Landfall 28 Nov 2025 · <b id="dayCount">day —</b></span>
-      <span id="siteLabel">Negombo</span>
-      <span id="sourceLabel">ERA5 / IFS reanalysis</span>
+    <div>
+      <div class="eyebrow">Sri Lanka · observational tracker · Asia/Colombo</div>
+      <h1>Rainfall <span>&amp; rivers</span></h1>
     </div>
-    <h1>Rainfall log<br><span>since Ditwah</span></h1>
-    <p class="standfirst">Daily rainfall, rain hours and temperature for one point in Sri Lanka, every day from the morning Ditwah came ashore to now. Pick a place, pick a range, read it or export it.</p>
+    <p class="standfirst">Choose a river system, then a measuring point. The dashboard pairs modelled rainfall at that gauge’s exact coordinates with its measured river-level history.</p>
   </header>
 
-  <section class="controls">
-    <div class="field">
-      <label for="place">Location</label>
-      <select id="place"></select>
-    </div>
-    <div class="custom-coords" id="customCoords">
-      <div class="field">
-        <label for="lat">Latitude</label>
-        <input id="lat" type="number" step="0.0001" value="7.2083">
+  <main>
+    <section class="selector-shell" aria-labelledby="mapHeading">
+      <div class="map-pane">
+        <div class="section-label" id="mapHeading">River systems</div>
+        <div id="riverMap" aria-label="Interactive map of monitored Sri Lanka river systems and gauges"></div>
+        <div id="mapFallback" class="map-fallback hidden">Map geometry is unavailable. Every gauge remains selectable from the list.</div>
+        <div class="map-attribution">Outline: <a href="https://www.geoboundaries.org/">geoBoundaries gbOpen</a> (OSM/Wambacher, ODbL). Rivers: <a href="https://www.hydrosheds.org/products/hydrorivers">HydroRIVERS / HydroSHEDS</a> via <a href="https://github.com/nuuuwan/lk_rivers">nuuuwan/lk_rivers</a>. No external basemap tiles are used.</div>
       </div>
-      <div class="field">
-        <label for="lon">Longitude</label>
-        <input id="lon" type="number" step="0.0001" value="79.8358">
+      <aside class="selector-panel" aria-label="Gauge selector">
+        <div class="selector-head">
+          <div class="eyebrow">Current filter</div>
+          <h2 id="riverFilterHeading">All monitored rivers</h2>
+          <div class="sub" id="riverFilterNote">Click a river to filter its gauges; no gauge is chosen automatically.</div>
+          <div class="inline-actions"><button type="button" class="text-button" id="showAllRivers">Clear river and gauge selection</button></div>
+        </div>
+        <div class="gauge-select-wrap field">
+          <label for="riverSystem">River system</label>
+          <select id="riverSystem"><option value="">All monitored rivers</option></select>
+        </div>
+        <div class="gauge-select-wrap field">
+          <label for="gauge">Measuring point</label>
+          <select id="gauge"><option value="">Select a gauge…</option></select>
+        </div>
+        <div class="gauge-list" id="gaugeList" role="list" aria-label="Available river gauges"></div>
+      </aside>
+    </section>
+
+    <section class="controls" aria-label="Date range and rainfall options">
+      <div class="presets" aria-label="Date presets">
+        <button type="button" class="preset" data-days="7">7 days</button>
+        <button type="button" class="preset" data-days="30">30 days</button>
+        <button type="button" class="preset" data-days="90">90 days</button>
+        <button type="button" class="preset" data-since="ditwah">Since Ditwah</button>
       </div>
-    </div>
-    <div class="field">
-      <label for="gauge">River gauge (independent)</label>
-      <select id="gauge" aria-describedby="gaugeCoverage">
-        <option value="">Select river gauge.</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="start">From</label>
-      <input id="start" type="date" value="2025-11-28">
-    </div>
-    <div class="field">
-      <label for="end">To</label>
-      <input id="end" type="date">
-    </div>
-    <div class="field">
-      <label>&nbsp;</label>
-      <button id="load">Load record</button>
-    </div>
-    <div class="field">
-      <label>&nbsp;</label>
-      <button id="csv" class="ghost" disabled>Export CSV</button>
-    </div>
-  </section>
+      <div class="field"><label for="start">Start date · LKT</label><input id="start" type="date"></div>
+      <div class="field"><label for="end">End date · LKT</label><input id="end" type="date"></div>
+      <button type="button" class="action" id="csv" disabled>Export CSV</button>
+      <details class="rain-only">
+        <summary>Rainfall-only city or custom coordinates</summary>
+        <div class="rain-only-grid">
+          <div class="field"><label for="place">Location</label><select id="place"></select></div>
+          <div class="field custom-coordinate" id="latField"><label for="lat">Latitude</label><input id="lat" type="number" min="5" max="10.5" step="0.0001"></div>
+          <div class="field custom-coordinate" id="lonField"><label for="lon">Longitude</label><input id="lon" type="number" min="79" max="82.5" step="0.0001"></div>
+          <button type="button" class="action primary" id="loadRainOnly">Load rainfall only</button>
+        </div>
+      </details>
+    </section>
 
-  <div class="status" id="status">
-    Ready. Press <strong>Load record</strong> to pull the daily series from Open-Meteo.
-  </div>
+    <div id="riverStatus" class="status" aria-live="polite">Loading river observations…</div>
+    <div id="rainStatus" class="status hidden" aria-live="polite"></div>
 
-  <div class="status" id="riverStatus" aria-live="polite">
-    Loading official gauges and the cached historical archive…
-  </div>
+    <section class="panel" id="dashboardPanel" aria-labelledby="selectionHeading">
+      <div class="location-head">
+        <div><h2 id="selectionHeading">Choose a gauge</h2><div class="sub" id="selectionSub">No default gauge is implied.</div></div>
+        <div class="coverage" id="coverageNote">River selection filters context; a gauge selection loads its exact rainfall coordinates.</div>
+      </div>
+      <div class="overview" id="overview"></div>
+      <div class="panel-head"><h3>Coordinated daily record</h3><span class="sub" id="chartSub">Rainfall above · river level below · shared LKT date axis</span></div>
+      <div class="readout" id="combinedReadout" tabindex="0" aria-live="polite">Select a gauge, or load a rainfall-only location.</div>
+      <div class="chart-scroll" id="combinedChart"></div>
+      <div class="chart-key">
+        <span class="key-item"><span class="swatch"></span>Modelled daily rainfall</span>
+        <span class="key-item"><span class="swatch line"></span>Measured daily river peak</span>
+        <span class="key-item"><span class="swatch gap"></span>Gaps stay unconnected</span>
+      </div>
+    </section>
 
-  <section class="stats hidden" id="stats"></section>
-
-  <section class="panel hidden" id="riverSummaryPanel">
-    <div class="panel-head">
-      <h2>Current river level</h2>
-      <span class="sub" id="riverSummarySub">Measured gauge observation</span>
-    </div>
-    <div class="river-current" id="riverCurrent"></div>
-    <div class="panel-body mono-note" id="gaugeCoverage"></div>
-  </section>
-
-  <section class="panel hidden" id="riverChartPanel">
-    <div class="panel-head">
-      <h2>Daily peak hydrograph</h2>
-      <span class="sub" id="riverChartSub">Daily maximum · metres</span>
-    </div>
-    <div class="readout" id="riverReadout">Hover or focus a point for the daily gauge details.</div>
-    <div class="chart-scroll" id="riverChartScroll"></div>
-    <div class="provenance-key">Solid points are measured daily peaks. Missing dates are left as visible gaps; no river levels are interpolated.</div>
-  </section>
-
-  <section class="panel hidden" id="chartPanel">
-    <div class="panel-head">
-      <h2>Hyetograph</h2>
-      <span class="sub">Rain falls downward · temperature below</span>
-    </div>
-    <div class="readout" id="readout">Hover a column for that day's numbers.</div>
-    <div class="chart-scroll" id="chartScroll"></div>
-    <div class="legend" id="legend"></div>
-  </section>
-
-  <section class="panel hidden" id="monthPanel">
-    <div class="panel-head">
-      <h2>By month</h2>
-      <span class="sub">Total mm · wet days</span>
-    </div>
-    <div class="panel-body" style="padding:0">
+    <section class="panel hidden" id="monthPanel">
+      <div class="panel-head"><h3>Monthly rainfall</h3><span class="sub">Displayed range · total mm · wet days</span></div>
       <div class="months" id="months"></div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel hidden" id="tablePanel">
-    <div class="panel-head">
-      <h2>Daily record</h2>
-      <span class="sub" id="rowCount"></span>
-    </div>
-    <div class="filters">
-      <div class="field">
-        <label for="fMonth">Month</label>
-        <select id="fMonth"><option value="">All</option></select>
+    <section class="panel hidden" id="tablePanel">
+      <div class="panel-head"><h3>Daily values</h3><span class="sub" id="rowCount"></span></div>
+      <div class="filters">
+        <div class="field"><label for="fMonth">Month</label><select id="fMonth"><option value="">All</option></select></div>
+        <div class="field"><label for="fMin">Minimum rainfall mm</label><input id="fMin" type="number" min="0" step="1" value="0"></div>
+        <button type="button" class="action" id="fReset">Reset filters</button>
       </div>
-      <div class="field">
-        <label for="fMin">Min rainfall (mm)</label>
-        <input id="fMin" type="number" min="0" step="1" value="0">
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th class="sortable" data-sort="date" tabindex="0">Date</th>
+            <th class="sortable" data-sort="rain" tabindex="0">Rain mm</th>
+            <th class="sortable" data-sort="riverPeak" tabindex="0">River peak</th>
+            <th class="sortable" data-sort="riverStatusRank" tabindex="0">Status</th>
+            <th class="sortable" data-sort="hours" tabindex="0">Rain hrs</th>
+            <th class="sortable" data-sort="tmax" tabindex="0">Max °C</th>
+            <th class="sortable" data-sort="tmin" tabindex="0">Min °C</th>
+            <th class="sortable" data-sort="wind" tabindex="0">Wind km/h</th>
+            <th>Exact observations &amp; provenance</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
       </div>
-      <div class="field">
-        <label>&nbsp;</label>
-        <button class="ghost" id="fReset">Reset</button>
-      </div>
-    </div>
-    <div class="tbl-scroll">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th class="s" data-sort="date">Date</th>
-            <th data-sort="day">Day</th>
-            <th class="s" data-sort="rain">Rain mm</th>
-            <th class="s" data-sort="hours">Rain hrs</th>
-            <th class="s" data-sort="tmax">Max °C</th>
-            <th class="s" data-sort="tmin">Min °C</th>
-            <th class="s" data-sort="wind">Wind km/h</th>
-            <th class="s" data-sort="riverPeak">River peak</th>
-            <th class="s" data-sort="riverStatusRank">Flood status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+    </section>
 
-  <footer>
-    <h3>What this data actually is</h3>
-    <p><strong>Rainfall is modelled.</strong> Open-Meteo serves ECMWF ERA5 / IFS reanalysis: a model that blends multiple observations onto a grid. It is a useful coordinate-based estimate, not a rain-gauge measurement or certified station record.</p>
-    <p><strong>River levels are measured gauge observations.</strong> Current readings come directly from the Sri Lanka Irrigation Department’s <a href="https://www.arcgis.com/apps/dashboards/2cffe83c9ff5497d97375498bdf3ff38">official public ArcGIS dashboard</a>. The layer exposes only its latest seven days. Earlier readings from 28 November 2025 onward come from <a href="https://github.com/nuuuwan/lk_irrigation">nuuuwan/lk_irrigation</a>, a community-maintained snapshot mirror of that official feed—not an Irrigation Department archive.</p>
-    <p><strong>Official flood-event spot check.</strong> The mirror’s Dunamale observation at 15:03 LKT on 28 November 2025 is 5.96&nbsp;m, matching the approximately 15:00 reading in the <a href="https://www.dmc.gov.lk/images/dmcreports/Water_level_%26_Rainfall_2025__1764326082.pdf">official DMC water-level bulletin</a>. This cross-check does not certify every archived observation.</p>
-    <p>The most recent rainfall days may be preliminary. River levels preserve gauge-datum values, including negatives, and missing dates are never interpolated. This is an observational tracker—not a flood forecast, discharge model, certification source, or automatic nearest-gauge recommendation.</p>
-  </footer>
+    <section class="panel method">
+      <p><strong>Rainfall is modelled.</strong> Open-Meteo provides ECMWF ERA5/IFS coordinate-based estimates, not rain-gauge measurements. The newest days may be preliminary.</p>
+      <p><strong>River levels are measured gauge observations.</strong> Current readings come from the Sri Lanka Irrigation Department’s <a href="https://www.arcgis.com/apps/dashboards/2cffe83c9ff5497d97375498bdf3ff38">official ArcGIS dashboard</a>. Earlier readings come from the <a href="https://github.com/nuuuwan/lk_irrigation">community-maintained mirror</a>. Values use the gauge datum, can be negative, and are never interpolated.</p>
+      <p>Thambuththegama uses the official coordinate in the Irrigation Department’s <a href="https://irrigation.gov.lk/web/images/Publications/Hydrologyical_Annual_2021-22.pdf">Hydrological Annual 2021/22</a>. This public tracker is observational—not a forecast, flood-extent map, certification source, or nearest-gauge recommendation.</p>
+    </section>
+  </main>
 </div>
-
-<script type="text/plain" id="legacy-script">
-const LANDFALL = "2025-11-28";
-
-const PLACES = [
-  ["Negombo",7.2083,79.8358],["Colombo",6.9271,79.8612],["Kelaniya",6.9553,79.9219],
-  ["Katunayake",7.1697,79.8842],["Gampaha",7.0917,79.9997],["Kalutara",6.5854,79.9607],
-  ["Puttalam",8.0362,79.8283],["Kurunegala",7.4863,80.3647],["Kegalle",7.2513,80.3464],
-  ["Kandy",7.2906,80.6337],["Matale",7.4675,80.6234],["Nuwara Eliya",6.9497,80.7891],
-  ["Badulla",6.9895,81.0557],["Monaragala",6.8728,81.3509],["Ratnapura",6.6828,80.3992],
-  ["Galle",6.0535,80.2210],["Matara",5.9485,80.5353],["Hambantota",6.1241,81.1185],
-  ["Ampara",7.2917,81.6725],["Batticaloa",7.7102,81.6924],["Trincomalee",8.5874,81.2152],
-  ["Polonnaruwa",7.9403,81.0188],["Anuradhapura",8.3114,80.4037],["Vavuniya",8.7514,80.4971],
-  ["Mannar",8.9810,79.9044],["Mullaitivu",9.2670,80.8142],["Kilinochchi",9.3803,80.3770],
-  ["Jaffna",9.6615,80.0255]
-];
-
-const BANDS = [
-  [0.1,  "var(--b0)", "Dry / trace", "<0.1"],
-  [1,    "var(--b1)", "Trace",       "0.1–1"],
-  [10,   "var(--b1)", "Light",       "1–10"],
-  [25,   "var(--b2)", "Moderate",    "10–25"],
-  [50,   "var(--b3)", "Heavy",       "25–50"],
-  [100,  "var(--b4)", "Very heavy",  "50–100"],
-  [150,  "var(--b5)", "Extreme",     "100–150"],
-  [1e9,  "var(--b6)", "Exceptional", "150+"]
-];
-const LEGEND = [
-  ["var(--b1)","0.1–10 mm light"],["var(--b2)","10–25 moderate"],["var(--b3)","25–50 heavy"],
-  ["var(--b4)","50–100 very heavy"],["var(--b5)","100–150 extreme"],["var(--b6)","150+ exceptional"]
-];
-const EVENTS = [
-  ["2025-11-28","2025-12-05","Ditwah landfall + first flood peak"],
-  ["2025-12-19","2025-12-23","Second heavy-rain episode"]
-];
-
-const $ = s => document.querySelector(s);
-const el = { place:$("#place"), lat:$("#lat"), lon:$("#lon"), start:$("#start"), end:$("#end"),
-  load:$("#load"), csv:$("#csv"), status:$("#status"), stats:$("#stats"), chartPanel:$("#chartPanel"),
-  chartScroll:$("#chartScroll"), legend:$("#legend"), readout:$("#readout"), monthPanel:$("#monthPanel"),
-  months:$("#months"), tablePanel:$("#tablePanel"), tbody:$("#tbl tbody"), rowCount:$("#rowCount"),
-  fMonth:$("#fMonth"), fMin:$("#fMin"), fReset:$("#fReset"), custom:$("#customCoords"),
-  dayCount:$("#dayCount"), siteLabel:$("#siteLabel") };
-
-let ROWS = [], SORT = {key:"date", dir:1};
-
-/* ---------- helpers ---------- */
-const iso = d => d.toISOString().slice(0,10);
-const parse = s => new Date(s+"T00:00:00Z");
-const daysBetween = (a,b) => Math.round((parse(b)-parse(a))/86400000);
-const num = (v,d=1) => (v===null||v===undefined||Number.isNaN(v)) ? "—" : Number(v).toFixed(d);
-const bandOf = mm => BANDS.find(b => mm < b[0]) || BANDS[BANDS.length-1];
-function pick(o, names){ for(const n of names) if(o && o[n]) return o[n]; return null; }
-
-/* ---------- init ---------- */
-PLACES.forEach(([n],i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=n; el.place.appendChild(o); });
-const custom=document.createElement("option"); custom.value="custom"; custom.textContent="Custom coordinates…"; el.place.appendChild(custom);
-el.end.value = iso(new Date());
-el.end.max = iso(new Date());
-el.place.addEventListener("change",()=>{
-  const c = el.place.value==="custom";
-  el.custom.classList.toggle("on", c);
-  if(!c){ const [n,la,lo]=PLACES[+el.place.value]; el.lat.value=la; el.lon.value=lo; el.siteLabel.textContent=n; }
-});
-
-function setStatus(html, isErr){
-  el.status.className = "status" + (isErr ? " error" : "");
-  el.status.innerHTML = html;
-  el.status.classList.remove("hidden");
-}
-
-/* ---------- fetching ---------- */
-async function getJSON(url){
-  const r = await fetch(url);
-  if(!r.ok){ let m=""; try{ m=(await r.json()).reason||""; }catch(e){} throw new Error(m || ("HTTP "+r.status)); }
-  return r.json();
-}
-
-const VARS = "precipitation_sum,rain_sum,precipitation_hours,temperature_2m_max,temperature_2m_min,windspeed_10m_max";
-
-function toRows(d){
-  if(!d || !d.daily) return [];
-  const D = d.daily;
-  const t = D.time || [];
-  const rain = pick(D,["precipitation_sum"]) || [];
-  const rsum = pick(D,["rain_sum"]) || [];
-  const hrs  = pick(D,["precipitation_hours"]) || [];
-  const tmax = pick(D,["temperature_2m_max"]) || [];
-  const tmin = pick(D,["temperature_2m_min"]) || [];
-  const wind = pick(D,["windspeed_10m_max","wind_speed_10m_max"]) || [];
-  return t.map((date,i)=>({
-    date, rain:rain[i]??rsum[i]??null, hours:hrs[i]??null,
-    tmax:tmax[i]??null, tmin:tmin[i]??null, wind:wind[i]??null
-  })).filter(r => r.rain !== null || r.tmax !== null);
-}
-
-async function loadData(){
-  const la = parseFloat(el.lat.value), lo = parseFloat(el.lon.value);
-  const s = el.start.value, e = el.end.value;
-  if(Number.isNaN(la)||Number.isNaN(lo)) return setStatus("Enter a valid latitude and longitude.", true);
-  if(!s||!e||s>e) return setStatus("The end date must fall on or after the start date.", true);
-
-  el.load.disabled = true;
-  setStatus("Fetching daily series from Open-Meteo…");
-
-  const q = `latitude=${la}&longitude=${lo}&timezone=Asia%2FColombo&daily=${VARS}`;
-  const archiveURL  = `https://archive-api.open-meteo.com/v1/archive?${q}&start_date=${s}&end_date=${e}`;
-  const forecastURL = `https://api.open-meteo.com/v1/forecast?${q}&past_days=92&forecast_days=1`;
-
-  try{
-    // Archive is the primary source; the forecast endpoint backfills the reanalysis lag.
-    const [arch, fc] = await Promise.allSettled([getJSON(archiveURL), getJSON(forecastURL)]);
-    if(arch.status === "rejected" && fc.status === "rejected") throw arch.reason;
-
-    const map = new Map();
-    if(fc.status === "fulfilled")   toRows(fc.value).forEach(r => map.set(r.date, {...r, prelim:true}));
-    if(arch.status === "fulfilled") toRows(arch.value).forEach(r => map.set(r.date, r));
-
-    ROWS = [...map.values()]
-      .filter(r => r.date >= s && r.date <= e)
-      .sort((a,b) => a.date < b.date ? -1 : 1)
-      .map(r => ({...r, day: daysBetween(LANDFALL, r.date)}));
-
-    if(!ROWS.length) throw new Error("The API returned no days for that range.");
-
-    const gap = daysBetween(ROWS[ROWS.length-1].date, e);
-    setStatus(`Loaded <strong>${ROWS.length}</strong> days · ${ROWS[0].date} to ${ROWS[ROWS.length-1].date}` +
-      (gap > 0 ? ` · the last ${gap} day${gap>1?"s":""} ${gap>1?"are":"is"} not in the archive yet.` : "."));
-    render();
-  }catch(err){
-    ROWS = [];
-    setStatus(
-      `<strong>Couldn't reach Open-Meteo.</strong> ${String(err.message||err)}` +
-      `<div class="how">Most likely this page is running inside a sandbox that blocks outside requests.<br>` +
-      `Download the file and open it directly — <code>file:///…/ditwah-rainfall-log.html</code> — and it will load.<br>` +
-      `Or run <code>python3 -m http.server</code> in the folder and open <code>localhost:8000</code>.</div>`, true);
-    ["stats","chartPanel","monthPanel","tablePanel"].forEach(k => el[k].classList.add("hidden"));
-    el.csv.disabled = true;
-  }finally{
-    el.load.disabled = false;
-  }
-}
-
-/* ---------- render ---------- */
-function render(){
-  el.csv.disabled = false;
-  ["stats","chartPanel","monthPanel","tablePanel"].forEach(k => el[k].classList.remove("hidden"));
-  el.dayCount.textContent = "day " + (daysBetween(LANDFALL, iso(new Date())) + 1);
-  renderStats(); renderChart(); renderMonths(); renderMonthFilter(); renderTable();
-}
-
-function renderStats(){
-  const rain = ROWS.map(r => r.rain).filter(v => v !== null);
-  const total = rain.reduce((a,b)=>a+b,0);
-  const wet = ROWS.filter(r => (r.rain||0) >= 1).length;
-  const heavy = ROWS.filter(r => (r.rain||0) >= 50).length;
-  const wettest = ROWS.reduce((a,b)=>(b.rain||0)>(a.rain||0)?b:a, ROWS[0]);
-  const tmaxes = ROWS.map(r=>r.tmax).filter(v=>v!==null);
-  const tmins  = ROWS.map(r=>r.tmin).filter(v=>v!==null);
-  const hotDay = ROWS.reduce((a,b)=>(b.tmax??-99)>(a.tmax??-99)?b:a, ROWS[0]);
-  const coldDay= ROWS.reduce((a,b)=>(b.tmin??99)<(a.tmin??99)?b:a, ROWS[0]);
-  const avgMax = tmaxes.reduce((a,b)=>a+b,0)/(tmaxes.length||1);
-  const avgMin = tmins.reduce((a,b)=>a+b,0)/(tmins.length||1);
-
-  const cards = [
-    ["Total rainfall", Math.round(total).toLocaleString(), "mm", `over ${ROWS.length} days`],
-    ["Wet days", wet, `/ ${ROWS.length}`, `${heavy} day${heavy===1?"":"s"} over 50 mm`],
-    ["Wettest day", num(wettest.rain,1), "mm", `${wettest.date} · day ${wettest.day}`],
-    ["Daily mean", num(total/ROWS.length,1), "mm", "across the whole range"],
-    ["Hottest", num(hotDay.tmax,1), "°C", `${hotDay.date} · mean max ${num(avgMax,1)}`],
-    ["Coolest", num(coldDay.tmin,1), "°C", `${coldDay.date} · mean min ${num(avgMin,1)}`]
-  ];
-  el.stats.innerHTML = cards.map(([k,v,u,n])=>
-    `<div class="stat"><div class="k">${k}</div><div class="v">${v}<em>${u}</em></div><div class="n">${n}</div></div>`
-  ).join("");
-}
-
-function renderChart(){
-  const W=1240, H=470, ML=56, MR=14, MT=34, RAIN_H=250, GAP=26, TEMP_H=96;
-  const plotW = W-ML-MR;
-  const n = ROWS.length;
-  const bw = Math.max(1.4, plotW/n - (n>140 ? 0.6 : 1.6));
-  const step = plotW/n;
-  const x = i => ML + i*step + (step-bw)/2;
-
-  const maxRain = Math.max(10, ...ROWS.map(r=>r.rain||0));
-  const rTop = Math.ceil(maxRain/25)*25;
-  const rY = mm => MT + (mm/rTop)*RAIN_H;
-
-  const tVals = ROWS.flatMap(r=>[r.tmax,r.tmin]).filter(v=>v!==null);
-  const tHi = Math.ceil(Math.max(...tVals)/2)*2, tLo = Math.floor(Math.min(...tVals)/2)*2;
-  const tBase = MT+RAIN_H+GAP;
-  const tY = c => tBase + TEMP_H - ((c-tLo)/((tHi-tLo)||1))*TEMP_H;
-
-  let g = "";
-
-  // event shading
-  EVENTS.forEach(([a,b,label])=>{
-    const i0 = ROWS.findIndex(r=>r.date>=a), i1 = ROWS.findIndex(r=>r.date>b);
-    if(i0<0) return;
-    const end = i1<0 ? n : i1;
-    const x0 = ML+i0*step, x1 = ML+end*step;
-    g += `<rect x="${x0}" y="${MT}" width="${Math.max(2,x1-x0)}" height="${RAIN_H}" fill="var(--b6)" opacity=".07"/>`;
-    g += `<line x1="${x0}" y1="${MT}" x2="${x0}" y2="${MT+RAIN_H}" stroke="var(--b6)" stroke-width="1" opacity=".55"/>`;
-    g += `<text x="${x0+4}" y="${MT-9}" font-family="var(--mono)" font-size="9.5" letter-spacing=".08em" fill="var(--b6)">${label.toUpperCase()}</text>`;
-  });
-
-  // rain gridlines (inverted: 0 at top)
-  const stepMM = rTop>300?100:rTop>150?50:25;
-  for(let mm=0; mm<=rTop; mm+=stepMM){
-    const y = rY(mm);
-    g += `<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
-    g += `<text x="${ML-8}" y="${y+3.5}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${mm}</text>`;
-  }
-  g += `<line x1="${ML}" y1="${MT}" x2="${W-MR}" y2="${MT}" stroke="var(--ink)" stroke-width="2"/>`;
-  g += `<text x="${ML-8}" y="${MT-9}" text-anchor="end" font-family="var(--mono)" font-size="9.5" letter-spacing=".08em" fill="var(--ink-2)">MM ↓</text>`;
-
-  // bars hanging from the top rule
-  ROWS.forEach((r,i)=>{
-    const mm = r.rain||0;
-    if(mm <= 0) return;
-    const h = Math.max(1, rY(mm)-MT);
-    const [,color] = bandOf(mm);
-    g += `<rect class="bar" data-i="${i}" x="${x(i).toFixed(2)}" y="${MT}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}"><title>${r.date} — ${num(mm,1)} mm</title></rect>`;
-  });
-
-  // temperature strip
-  g += `<rect x="${ML}" y="${tBase}" width="${plotW}" height="${TEMP_H}" fill="#fff" opacity=".55"/>`;
-  [tLo, Math.round((tLo+tHi)/2), tHi].forEach(c=>{
-    g += `<line x1="${ML}" y1="${tY(c)}" x2="${W-MR}" y2="${tY(c)}" stroke="var(--grid)" stroke-width="1"/>`;
-    g += `<text x="${ML-8}" y="${tY(c)+3.5}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${c}°</text>`;
-  });
-  const line = key => ROWS.map((r,i)=> r[key]===null ? null : `${(x(i)+bw/2).toFixed(2)},${tY(r[key]).toFixed(2)}`)
-    .filter(Boolean).join(" ");
-  g += `<polyline points="${line("tmax")}" fill="none" stroke="var(--b5)" stroke-width="1.5"/>`;
-  g += `<polyline points="${line("tmin")}" fill="none" stroke="var(--b3)" stroke-width="1.5"/>`;
-  g += `<text x="${ML+6}" y="${tBase+13}" font-family="var(--mono)" font-size="9.5" letter-spacing=".08em" fill="var(--ink-2)">DAILY MAX / MIN °C</text>`;
-
-  // month ticks
-  let lastMo = "";
-  ROWS.forEach((r,i)=>{
-    const mo = r.date.slice(0,7);
-    if(mo===lastMo) return;
-    lastMo = mo;
-    const xp = ML+i*step;
-    g += `<line x1="${xp}" y1="${MT}" x2="${xp}" y2="${tBase+TEMP_H}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3"/>`;
-    const label = new Date(r.date+"T00:00:00Z").toLocaleDateString("en-GB",{month:"short",year:"2-digit",timeZone:"UTC"});
-    g += `<text x="${xp+4}" y="${tBase+TEMP_H+20}" font-family="var(--display)" font-size="16" font-weight="600" letter-spacing=".04em" fill="var(--ink-2)">${label.toUpperCase()}</text>`;
-  });
-
-  el.chartScroll.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily rainfall and temperature since Ditwah landfall">${g}</svg>`;
-  el.chartScroll.querySelectorAll(".bar").forEach(b=>{
-    b.addEventListener("mouseenter",()=>{
-      const r = ROWS[+b.dataset.i];
-      el.readout.innerHTML = `<b>${r.date}</b> · day ${r.day} · <b>${num(r.rain,1)} mm</b>` +
-        ` · ${num(r.hours,0)} rain hrs · ${num(r.tmax,1)}° / ${num(r.tmin,1)}° · wind ${num(r.wind,0)} km/h · ${bandOf(r.rain||0)[2]}`;
-    });
-  });
-  el.legend.innerHTML = LEGEND.map(([c,l])=>
-    `<span class="li"><span class="sw" style="background:${c}"></span><span class="lb">${l}</span></span>`).join("");
-}
-
-function renderMonths(){
-  const m = new Map();
-  ROWS.forEach(r=>{
-    const k = r.date.slice(0,7);
-    if(!m.has(k)) m.set(k,{total:0, wet:0, days:0, max:0});
-    const o = m.get(k);
-    o.total += r.rain||0; o.days++;
-    if((r.rain||0)>=1) o.wet++;
-    if((r.rain||0)>o.max) o.max = r.rain;
-  });
-  const peak = Math.max(...[...m.values()].map(o=>o.total));
-  el.months.innerHTML = [...m.entries()].map(([k,o])=>{
-    const label = new Date(k+"-01T00:00:00Z").toLocaleDateString("en-GB",{month:"long",year:"numeric",timeZone:"UTC"});
-    return `<div class="mo">
-      <div class="mn">${label}</div>
-      <div class="mv">${Math.round(o.total).toLocaleString()}<em> mm</em></div>
-      <div class="track"><i style="width:${(o.total/peak*100).toFixed(1)}%"></i></div>
-      <div class="md">${o.wet} wet of ${o.days} days · peak ${num(o.max,0)} mm</div>
-    </div>`;
-  }).join("");
-}
-
-function renderMonthFilter(){
-  const months = [...new Set(ROWS.map(r=>r.date.slice(0,7)))];
-  el.fMonth.innerHTML = `<option value="">All</option>` + months.map(k=>{
-    const label = new Date(k+"-01T00:00:00Z").toLocaleDateString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"});
-    return `<option value="${k}">${label}</option>`;
-  }).join("");
-}
-
-function visibleRows(){
-  const mo = el.fMonth.value, min = parseFloat(el.fMin.value)||0;
-  let rows = ROWS.filter(r => (!mo || r.date.startsWith(mo)) && (r.rain||0) >= min);
-  const k = SORT.key;
-  rows.sort((a,b)=>{
-    const va = k==="date" ? a.date : (a[k] ?? -1e9);
-    const vb = k==="date" ? b.date : (b[k] ?? -1e9);
-    return (va<vb?-1:va>vb?1:0) * SORT.dir;
-  });
-  return rows;
-}
-
-function inEvent(d){ return EVENTS.some(([a,b])=> d>=a && d<=b); }
-
-function renderTable(){
-  const rows = visibleRows();
-  el.rowCount.textContent = `${rows.length} of ${ROWS.length} days`;
-  el.tbody.innerHTML = rows.map(r=>{
-    const [,color,label] = bandOf(r.rain||0);
-    return `<tr class="${(r.rain||0)>=50?"wet":""} ${inEvent(r.date)?"event":""}">
-      <td><span class="chip" style="background:${color}" title="${label}"></span>${r.date}</td>
-      <td>${r.day}</td><td>${num(r.rain,1)}</td><td>${num(r.hours,0)}</td>
-      <td>${num(r.tmax,1)}</td><td>${num(r.tmin,1)}</td><td>${num(r.wind,0)}</td>
-    </tr>`;
-  }).join("");
-}
-
-/* ---------- export ---------- */
-function exportCSV(){
-  const head = ["date","day_since_landfall","rainfall_mm","rain_hours","temp_max_c","temp_min_c","wind_max_kmh","intensity_band"];
-  const lines = [head.join(",")].concat(visibleRows().map(r=>
-    [r.date, r.day, r.rain ?? "", r.hours ?? "", r.tmax ?? "", r.tmin ?? "", r.wind ?? "", bandOf(r.rain||0)[2]].join(",")
-  ));
-  const name = (el.place.value==="custom" ? `${el.lat.value}_${el.lon.value}` : PLACES[+el.place.value][0].replace(/\s+/g,"-"));
-  const url = URL.createObjectURL(new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"}));
-  const a = document.createElement("a");
-  a.href = url; a.download = `rainfall_${name}_${el.start.value}_to_${el.end.value}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-}
-
-/* ---------- wiring ---------- */
-el.load.addEventListener("click", loadData);
-el.csv.addEventListener("click", exportCSV);
-el.fMonth.addEventListener("change", renderTable);
-el.fMin.addEventListener("input", renderTable);
-el.fReset.addEventListener("click", ()=>{ el.fMonth.value=""; el.fMin.value=0; renderTable(); });
-document.querySelectorAll("th.s").forEach(th=>{
-  th.addEventListener("click", ()=>{
-    const k = th.dataset.sort;
-    SORT = {key:k, dir: SORT.key===k ? -SORT.dir : (k==="date" ? 1 : -1)};
-    renderTable();
-  });
-});
-el.dayCount.textContent = "day " + (daysBetween(LANDFALL, iso(new Date())) + 1);
-loadData();
-</script>
+<noscript>This dashboard needs JavaScript for map and chart interaction. The checked-in data files remain directly accessible.</noscript>
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="lib/river-levels.js"></script>
+<script src="lib/dashboard.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

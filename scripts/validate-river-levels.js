@@ -39,6 +39,20 @@ function validateArchive(data) {
     ids.add(station.id);
     assert(typeof station.basin === "string" && station.basin, `${station.id} has no basin`);
     assert(station.display_unit === "m" || station.display_unit === "ft", `${station.id} has invalid display unit`);
+    nullableFinite(station.latitude, `${station.id} latitude`);
+    nullableFinite(station.longitude, `${station.id} longitude`);
+    assert((station.latitude === null) === (station.longitude === null), `${station.id} coordinates must be a complete pair`);
+    if (station.latitude !== null) {
+      assert(station.latitude >= 5.7 && station.latitude <= 10.15 &&
+        station.longitude >= 79.35 && station.longitude <= 82.1, `${station.id} coordinates are outside Sri Lanka`);
+    }
+    if (Object.hasOwn(station, "coordinate_source")) {
+      assert(station.coordinate_source === null || (typeof station.coordinate_source === "string" && station.coordinate_source),
+        `${station.id} coordinate source is invalid`);
+    }
+    if (Object.hasOwn(station, "coordinate_note")) {
+      assert(station.coordinate_note === null || typeof station.coordinate_note === "string", `${station.id} coordinate note is invalid`);
+    }
     nullableFinite(station.thresholds_m?.alert, `${station.id} alert threshold`);
     nullableFinite(station.thresholds_m?.minor, `${station.id} minor threshold`);
     nullableFinite(station.thresholds_m?.major, `${station.id} major threshold`);
