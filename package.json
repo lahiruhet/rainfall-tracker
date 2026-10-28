@@ -8,6 +8,7 @@
     "generate:map": "node scripts/generate-river-map.js",
     "validate:river": "node scripts/validate-river-levels.js data/river-levels.json",
     "validate:map": "node scripts/validate-river-map.js data/river-map.json",
+    "build": "node scripts/build-site.js",
     "test": "node --test --test-isolation=none",
     "verify": "npm test && npm run validate:river && npm run validate:map"
   },

@@ -132,20 +132,35 @@ function validateArchive(data) {
   return data;
 }
 
-function readAndValidate(file) {
+// A candidate that loses a station would be committed, and the next run's tests
+// read the committed file, so a dropped station would block every later update.
+function validateRetainedStations(data, previous) {
+  const kept = new Set((data.stations || []).map(station => station.id));
+  const missing = (previous?.stations || []).map(station => station.id).filter(id => !kept.has(id));
+  assert(!missing.length, `candidate drops stations from the last-good archive: ${missing.join(", ")}`);
+}
+
+function readAndValidate(file, previousFile = null) {
   const resolved = path.resolve(file);
   validateArchiveSize(fs.statSync(resolved).size, resolved);
   let data;
   try { data = JSON.parse(fs.readFileSync(resolved, "utf8")); }
   catch (error) { throw new Error(`Could not parse ${resolved}: ${error.message}`); }
   validateArchive(data);
+  if (previousFile && fs.existsSync(previousFile)) {
+    validateRetainedStations(data, JSON.parse(fs.readFileSync(path.resolve(previousFile), "utf8")));
+  }
   return data;
 }
 
 if (require.main === module) {
   try {
-    const file = process.argv[2] || path.join("data", "river-levels.json");
-    const data = readAndValidate(file);
+    const args = process.argv.slice(2);
+    const flag = args.indexOf("--previous");
+    const previousFile = flag >= 0 ? args.splice(flag, 2)[1] : null;
+    assert(flag < 0 || previousFile, "--previous needs a file path");
+    const file = args[0] || path.join("data", "river-levels.json");
+    const data = readAndValidate(file, previousFile);
     process.stdout.write(`Valid river archive: ${data.stations.length} stations, through ${data.coverage.end}\n`);
   } catch (error) {
     process.stderr.write(`${error.stack || error}\n`);
@@ -153,4 +168,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { MAX_ARCHIVE_BYTES, validateArchiveSize, validateArchive, readAndValidate };
+module.exports = { MAX_ARCHIVE_BYTES, validateArchiveSize, validateArchive, validateRetainedStations, readAndValidate };

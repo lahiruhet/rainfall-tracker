@@ -6,7 +6,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const River = require("../lib/river-levels.js");
 const Generator = require("../scripts/generate-river-levels.js");
-const { MAX_ARCHIVE_BYTES, validateArchiveSize, validateArchive } = require("../scripts/validate-river-levels.js");
+const { MAX_ARCHIVE_BYTES, validateArchiveSize, validateArchive, validateRetainedStations } =
+  require("../scripts/validate-river-levels.js");
 
 function seconds(iso) { return Math.floor(Date.parse(iso) / 1000); }
 function mirror(station, iso, level) {
@@ -200,12 +201,50 @@ test("generator rejects a partial critical-source failure", async () => {
   await assert.rejects(() => Generator.loadSources(mockFetch), /stations\.json.*HTTP 502/);
 });
 
+test("stations and days that leave the live window keep their last-good archive rows", () => {
+  const dunamale = (iso, level, objectid) => official("Dunamale", iso, level,
+    { objectid, basin: "Aththanagalu Oya", alert: 3.3, minor: 4.4, major: 5.5 });
+  const previousArchive = River.buildArchive({
+    mirrorRecords: [DUNAMALE_CHECK], stationMetadata: META, rivers: RIVERS,
+    liveFeatures: [dunamale("2025-11-29T00:00:00Z", 2, 1), dunamale("2025-11-30T00:00:00Z", 1, 2),
+      official("Gone Gauge", "2025-11-30T00:00:00Z", 1.4, { objectid: 3, basin: "Test Basin" })]
+  });
+  const next = River.buildArchive({
+    mirrorRecords: [DUNAMALE_CHECK], stationMetadata: META, rivers: RIVERS, previousArchive,
+    liveFeatures: [dunamale("2025-11-30T00:00:00Z", 2.5, 4), dunamale("2025-12-01T00:00:00Z", 3, 5)]
+  });
+  const gone = next.stations.find(item => item.id === "gone-gauge");
+  assert.deepEqual(gone, previousArchive.stations.find(item => item.id === "gone-gauge"));
+  assert.deepEqual(next.daily["gone-gauge"], previousArchive.daily["gone-gauge"]);
+  assert.equal(next.recent["gone-gauge"], undefined);
+  const rows = next.daily.dunamale.map(River.expandDailyRow);
+  assert.deepEqual(rows.map(row => [row.date, row.peakM]),
+    [["2025-11-28", 5.96], ["2025-11-29", 2], ["2025-11-30", 2.5], ["2025-12-01", 3]]);
+  assert.equal(next.stations.find(item => item.id === "dunamale").data_start, "2025-11-28");
+  assert.doesNotThrow(() => validateArchive(next));
+  assert.doesNotThrow(() => validateRetainedStations(next, previousArchive));
+});
+
+test("candidate validation rejects an archive that drops a last-good station", () => {
+  const previous = { stations: [{ id: "dunamale" }, { id: "thambuththegama" }] };
+  assert.throws(() => validateRetainedStations({ stations: [{ id: "dunamale" }] }, previous), /thambuththegama/);
+  assert.doesNotThrow(() => validateRetainedStations({ stations: previous.stations }, previous));
+});
+
+test("generator reads the last-good archive from --previous and treats a missing one as a first run", async () => {
+  assert.equal(Generator.previousArg(["--output", "a.json", "--previous", "b.json"]), "b.json");
+  assert.equal(Generator.previousArg([]), path.join("data", "river-levels.json"));
+  assert.equal(await Generator.readPreviousArchive(path.join(__dirname, "no-such-archive.json")), null);
+});
+
 test("workflow preserves last-good data until candidate validation succeeds", () => {
   const workflow = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "update-river-levels.yml"), "utf8");
   const generated = workflow.indexOf("--output data/river-levels.next.json");
   const validated = workflow.indexOf("validate-river-levels.js data/river-levels.next.json");
   const replaced = workflow.indexOf("mv data/river-levels.next.json data/river-levels.json");
   assert.ok(generated >= 0 && validated > generated && replaced > validated);
+  assert.match(workflow, /validate-river-levels\.js data\/river-levels\.next\.json --previous data\/river-levels\.json/);
+  assert.match(workflow, /node-version: 24/);
   assert.match(workflow, /git diff --cached --quiet/);
   assert.match(workflow, /cron: "15 19 \* \* \*"/);
 });

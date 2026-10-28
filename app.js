@@ -242,8 +242,8 @@ function renderGaugeSelectors() {
   el.riverFilterNote.textContent = `${stations.length} gauge${stations.length === 1 ? "" : "s"} shown · choosing a river never chooses a gauge.`;
   el.gauge.replaceChildren(new Option("Select a gauge…", ""));
   for (const station of stations) {
-    const locationNote = finite(station.latitude) && finite(station.longitude) ? "" : " — map location unavailable";
-    el.gauge.appendChild(new Option(`${station.name}${station.live_only ? " — live only" : ""}${locationNote}`, station.id));
+    const locationNote = finite(station.latitude) && finite(station.longitude) ? "" : " (map location unavailable)";
+    el.gauge.appendChild(new Option(`${station.name}${station.live_only ? " (live only)" : ""}${locationNote}`, station.id));
   }
   el.gauge.value = stations.some(station => station.id === state.gaugeId) ? state.gaugeId : "";
   el.gaugeList.innerHTML = stations.map(station => {
